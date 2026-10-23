@@ -1,0 +1,4 @@
+rule,alerts
+amount_anomaly,50
+foreign_country,50
+velocity,158

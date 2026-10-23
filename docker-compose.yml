@@ -1,0 +1,58 @@
+# Real-Time Kafka + Spark Transaction Monitoring — deployment stack.
+# Local validation does NOT use this file (no Docker/Spark on the dev
+# machine); it is the deployment form of the pipeline. The verified local
+# run uses src/ (file-backed topic + same logic). See README.
+#
+# Usage:
+#   docker compose up -d kafka
+#   # create the topic
+#   docker compose exec kafka kafka-topics --bootstrap-server kafka:9092 \
+#       --create --topic transactions --partitions 3 --replication-factor 1
+#   docker compose up spark-job        # submits spark/spark_streaming_job.py
+#   # produce events with any Kafka producer, e.g. kafka-console-producer
+#   # or a client running src/producer.py logic against the broker.
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    hostname: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      # KRaft mode (no Zookeeper)
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+
+  spark-job:
+    image: apache/spark:3.5.1
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9092
+      KAFKA_TOPIC: transactions
+      OUTPUT_PATH: /data/output/transactions_clean
+      CHECKPOINT_PATH: /data/checkpoints/spark
+      PROFILE_PATH: /data/profile/customers.parquet
+    volumes:
+      - ./spark:/opt/app/spark
+      - ./data:/data
+    command: >
+      /opt/spark/bin/spark-submit
+      --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1
+      /opt/app/spark/spark_streaming_job.py
+    # Restart policy is part of the recovery story: a killed job comes
+    # back and resumes from CHECKPOINT_PATH (checkpointLocation).
+    restart: on-failure
+
+volumes:
+  kafka-data:

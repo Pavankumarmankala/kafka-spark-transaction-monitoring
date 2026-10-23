@@ -1,0 +1,7 @@
+pandas
+numpy
+matplotlib
+pyarrow
+pytest
+# Deployment only (docker-compose spark-job service provides these):
+# pyspark==3.5.1, Java 17 — see spark/spark_streaming_job.py

@@ -1,0 +1,19 @@
+{
+  "transactions_produced": 60000,
+  "unique_transactions": 58800,
+  "duplicates_injected": 1200,
+  "duplicates_removed": 1200,
+  "suspicious_injected": 450,
+  "suspicious_flagged": 258,
+  "output_transactions": 58800,
+  "recovery_test": {
+    "crash_after_batch": 20,
+    "checkpoint_offset_at_crash": 19000,
+    "resumed_from_offset": 19000,
+    "transactions_lost": 0,
+    "duplicates_in_output": 0,
+    "recovery_verified": true
+  },
+  "pipeline_runtime_seconds": 26.08,
+  "throughput_msgs_per_sec": 2300.6
+}
